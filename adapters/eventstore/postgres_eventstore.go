@@ -48,7 +48,7 @@ func (es *PostgresEventStore) Load() ([]interface{}, error) {
 			return nil, err
 		}
 		switch eventType {
-		case "registered-user":
+		case "user-registered":
 			var event domain.UserRegisteredEvent
 			if err := json.Unmarshal(data, &event); err != nil {
 				return nil, err

@@ -5,6 +5,11 @@ type RegisterUser struct {
 	Password string
 }
 
+type CreateToken struct {
+	Email    string
+	Password string
+}
+
 type User struct {
 	Email    string
 	Password string

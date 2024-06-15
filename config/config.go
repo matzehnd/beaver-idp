@@ -2,15 +2,16 @@ package config
 
 import (
 	"database/sql"
+
+	_ "github.com/lib/pq"
 )
 
 type Config struct {
 	DB *sql.DB
 }
 
-func LoadConfig() *Config {
-	// Hier kann man die Konfiguration laden (z.B. aus einer Datei oder Umgebungsvariablen)
-	db, err := sql.Open("postgres", "user=postgres dbname=yourdb sslmode=disable")
+func LoadConfig(conStr string) *Config {
+	db, err := sql.Open("postgres", conStr)
 	if err != nil {
 		panic(err)
 	}
