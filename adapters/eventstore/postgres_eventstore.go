@@ -20,6 +20,8 @@ func (es *PostgresEventStore) Save(event interface{}) error {
 	switch e := event.(type) {
 	case domain.UserRegisteredEvent:
 		eventType = "user-registered"
+	case domain.IsAdminEvent:
+		eventType = "is-admin"
 
 	default:
 		return fmt.Errorf("unknown event type: %T", e)
@@ -34,7 +36,7 @@ func (es *PostgresEventStore) Save(event interface{}) error {
 }
 
 func (es *PostgresEventStore) Load() ([]interface{}, error) {
-	rows, err := es.db.Query("SELECT type, data FROM events")
+	rows, err := es.db.Query("SELECT type, data FROM events order by id ASC")
 	if err != nil {
 		return nil, fmt.Errorf("unable to select events: %w", err)
 	}
@@ -50,6 +52,12 @@ func (es *PostgresEventStore) Load() ([]interface{}, error) {
 		switch eventType {
 		case "user-registered":
 			var event domain.UserRegisteredEvent
+			if err := json.Unmarshal(data, &event); err != nil {
+				return nil, err
+			}
+			events = append(events, event)
+		case "is-admin":
+			var event domain.IsAdminEvent
 			if err := json.Unmarshal(data, &event); err != nil {
 				return nil, err
 			}

@@ -19,3 +19,7 @@ type UserRegisteredEvent struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
+
+type IsAdminEvent struct {
+	Email string `json:"email"`
+}

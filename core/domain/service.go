@@ -16,6 +16,7 @@ type EventStore interface {
 type UserService struct {
 	eventStore EventStore
 	users      map[string]*User
+	admins     map[string]bool
 	privateKey []byte
 }
 
@@ -23,6 +24,7 @@ func NewUserService(eventStore EventStore, privateKey []byte) *UserService {
 	return &UserService{
 		eventStore: eventStore,
 		users:      make(map[string]*User),
+		admins:     make(map[string]bool),
 		privateKey: privateKey,
 	}
 }
@@ -41,6 +43,13 @@ func (s *UserService) RegisterUser(user RegisterUser) error {
 		return err
 	}
 	s.apply(event)
+	if len(s.admins) == 0 {
+		adminEvent := IsAdminEvent{Email: user.Email}
+		if err := s.eventStore.Save(adminEvent); err != nil {
+			return err
+		}
+		s.apply(adminEvent)
+	}
 	return nil
 }
 
@@ -63,7 +72,9 @@ func (s *UserService) CreateToken(tokenRequest CreateToken) (string, error) {
 		return "", fmt.Errorf("pw wrong")
 	}
 
-	token, err := tokenFromUser(*user, s.privateKey)
+	isAdmin, exists := s.admins[tokenRequest.Email]
+
+	token, err := tokenFromUser(*user, exists && isAdmin, s.privateKey)
 
 	if err != nil {
 		return "", fmt.Errorf("unable to get token: %T", err)
@@ -90,10 +101,13 @@ func (s *UserService) apply(event interface{}) {
 			Email:    e.Email,
 			Password: e.Password,
 		}
+		s.admins[e.Email] = false
+	case IsAdminEvent:
+		s.admins[e.Email] = true
 	}
 }
 
-func tokenFromUser(user User, privateKey []byte) (string, error) {
+func tokenFromUser(user User, isAdmin bool, privateKey []byte) (string, error) {
 	key, err := jwt.ParseRSAPrivateKeyFromPEM(privateKey)
 
 	fmt.Println(err)
@@ -101,9 +115,10 @@ func tokenFromUser(user User, privateKey []byte) (string, error) {
 		return "", err
 	}
 	claims := jwt.MapClaims{
-		"sub": user.Email,
-		"iat": time.Now().Unix(),
-		"exp": time.Now().Add(time.Hour * 72).Unix(),
+		"isAdmin": isAdmin,
+		"sub":     user.Email,
+		"iat":     time.Now().Unix(),
+		"exp":     time.Now().Add(time.Hour * 72).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)

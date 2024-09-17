@@ -5,7 +5,6 @@ import (
 	"beaver/idp/adapters/http"
 	"beaver/idp/config"
 	"beaver/idp/core/domain"
-	"fmt"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -30,14 +29,17 @@ func main() {
 		panic("no private key")
 	}
 
-	fmt.Println(privateKey)
-
 	cfg := config.LoadConfig(dbConn)
+	config.InitDb(*cfg)
 	defer cfg.DB.Close()
 	eventStore := eventstore.NewPostgresEventStore(cfg.DB)
 
 	userService := domain.NewUserService(eventStore, []byte(privateKey))
-	userService.RebuildEventStream() // Event Stream beim Start neu bilden
+
+	err := userService.RebuildEventStream() // Event Stream beim Start neu bilden
+	if err != nil {
+		panic(err)
+	}
 
 	r := gin.Default()
 	v1 := r.Group("/v1")

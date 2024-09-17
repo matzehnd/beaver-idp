@@ -19,3 +19,7 @@ func LoadConfig(conStr string) *Config {
 		DB: db,
 	}
 }
+
+func InitDb(config Config) {
+	config.DB.Exec("CREATE TABLE IF NOT EXISTS events (id SERIAL PRIMARY KEY, type VARCHAR(255), data JSON);")
+}
