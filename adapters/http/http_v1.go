@@ -16,6 +16,7 @@ func NewV1Handler(router *gin.RouterGroup, userService *domain.UserService) {
 	router.POST("/users", handler.createUser)
 	router.POST("/users/token", handler.createToken)
 	router.GET("/users/:id", handler.getUser)
+	router.GET("/validation", handler.validate)
 }
 
 type RegisterUserTO struct {
@@ -23,8 +24,13 @@ type RegisterUserTO struct {
 	Password string `json:"password"`
 }
 type CreateTokenTO struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email           string `json:"email"`
+	Password        string `json:"password"`
+	ValidityInHours *int   `json:"validityInHours,omitempty"`
+}
+
+type TokenTO struct {
+	Token string `json:"token"`
 }
 
 func (h *UserHandler) createUser(c *gin.Context) {
@@ -61,5 +67,24 @@ func (h *UserHandler) createToken(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, token)
+	c.JSON(http.StatusOK, gin.H{"token": token})
+}
+
+func (h *UserHandler) validate(c *gin.Context) {
+	var token TokenTO
+	if err := c.ShouldBindJSON(&token); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	validated, err := h.userService.ValidateToken(token.Token)
+
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+	if validated.Valid {
+		c.Status(http.StatusOK)
+		return
+	}
+	c.Status(http.StatusUnauthorized)
 }

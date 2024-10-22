@@ -2,3 +2,5 @@ private.pem
 public.key
 .vscode
 idp
+env.sh
+docker-data

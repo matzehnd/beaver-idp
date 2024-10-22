@@ -6,8 +6,9 @@ type RegisterUser struct {
 }
 
 type CreateToken struct {
-	Email    string
-	Password string
+	Email           string
+	Password        string
+	ValidityInHours *int
 }
 
 type User struct {

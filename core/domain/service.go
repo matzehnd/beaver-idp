@@ -74,7 +74,7 @@ func (s *UserService) CreateToken(tokenRequest CreateToken) (string, error) {
 
 	isAdmin, exists := s.admins[tokenRequest.Email]
 
-	token, err := tokenFromUser(*user, exists && isAdmin, s.privateKey)
+	token, err := tokenFromUser(*user, exists && isAdmin, tokenRequest.ValidityInHours, s.privateKey)
 
 	if err != nil {
 		return "", fmt.Errorf("unable to get token: %T", err)
@@ -107,10 +107,17 @@ func (s *UserService) apply(event interface{}) {
 	}
 }
 
-func tokenFromUser(user User, isAdmin bool, privateKey []byte) (string, error) {
+func tokenFromUser(user User, isAdmin bool, validityInHours *int, privateKey []byte) (string, error) {
 	key, err := jwt.ParseRSAPrivateKeyFromPEM(privateKey)
 
-	fmt.Println(err)
+	duration := func(validity *int) time.Duration {
+		if validity != nil {
+			return time.Duration(time.Hour * time.Duration(*validity))
+		}
+		return time.Duration(time.Hour * 72)
+	}(validityInHours)
+	fmt.Println(duration)
+
 	if err != nil {
 		return "", err
 	}
@@ -118,7 +125,7 @@ func tokenFromUser(user User, isAdmin bool, privateKey []byte) (string, error) {
 		"isAdmin": isAdmin,
 		"sub":     user.Email,
 		"iat":     time.Now().Unix(),
-		"exp":     time.Now().Add(time.Hour * 72).Unix(),
+		"exp":     time.Now().Add(duration).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
@@ -128,4 +135,21 @@ func tokenFromUser(user User, isAdmin bool, privateKey []byte) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+func (s *UserService) ValidateToken(token string) (*jwt.Token, error) {
+	key, err := jwt.ParseRSAPrivateKeyFromPEM(s.privateKey)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse private key: %v", err)
+	}
+
+	parsed, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		return &key.PublicKey, nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("unable to verify token: %v", err)
+	}
+
+	return parsed, nil
 }

@@ -1,0 +1,12 @@
+version: "3"
+services:
+  idp:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=idp
+    volumes:
+      - ./docker-data/postgresql:/var/lib/postgresql/data
