@@ -34,7 +34,9 @@ func main() {
 	defer cfg.DB.Close()
 	eventStore := eventstore.NewPostgresEventStore(cfg.DB)
 
-	userService := domain.NewUserService(eventStore, []byte(privateKey))
+	tokenService := domain.NewTokenService([]byte(privateKey))
+	userService := domain.NewUserService(eventStore)
+	thingService := domain.NewThingService(eventStore)
 
 	err := userService.RebuildEventStream() // Event Stream beim Start neu bilden
 	if err != nil {
@@ -44,7 +46,7 @@ func main() {
 	r := gin.Default()
 	v1 := r.Group("/v1")
 
-	http.NewV1Handler(v1, userService)
+	http.NewV1Handler(v1, userService, tokenService, thingService)
 
 	r.Run(":" + port)
 

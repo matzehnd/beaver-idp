@@ -4,10 +4,16 @@
 
 `openssl genpkey -algorithm RSA -out private.pem`
 
-` openssl rsa -pubout -in private.pem -out public.key`
+`openssl rsa -pubout -in private.pem -out public.key`
 
 ## ENV Variables
 
 - PORT
 - DB
 - PRIVATE_KEY
+
+## Start
+
+```bash
+go run .
+```

@@ -22,6 +22,8 @@ func (es *PostgresEventStore) Save(event interface{}) error {
 		eventType = "user-registered"
 	case domain.IsAdminEvent:
 		eventType = "is-admin"
+	case domain.ThingRegisteredEvent:
+		eventType = "thing-registered"
 
 	default:
 		return fmt.Errorf("unknown event type: %T", e)
@@ -58,6 +60,12 @@ func (es *PostgresEventStore) Load() ([]interface{}, error) {
 			events = append(events, event)
 		case "is-admin":
 			var event domain.IsAdminEvent
+			if err := json.Unmarshal(data, &event); err != nil {
+				return nil, err
+			}
+			events = append(events, event)
+		case "thing-registered":
+			var event domain.ThingRegisteredEvent
 			if err := json.Unmarshal(data, &event); err != nil {
 				return nil, err
 			}

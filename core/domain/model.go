@@ -1,14 +1,17 @@
 package domain
 
+type EventStore interface {
+	Save(event interface{}) error
+	Load() ([]interface{}, error)
+}
+
 type RegisterUser struct {
 	Email    string
 	Password string
 }
-
-type CreateToken struct {
-	Email           string
-	Password        string
-	ValidityInHours *int
+type RegisterThing struct {
+	Id       string
+	Password string
 }
 
 type User struct {
@@ -16,6 +19,15 @@ type User struct {
 	Password string
 }
 
+type Thing struct {
+	Id       string
+	Password string
+}
+
+type ThingRegisteredEvent struct {
+	Id       string `json:"id"`
+	Password string `json:"password"`
+}
 type UserRegisteredEvent struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
