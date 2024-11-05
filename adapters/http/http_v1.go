@@ -145,7 +145,7 @@ func (h *UserHandler) validate(c *gin.Context) {
 		return
 	}
 	if validated.Valid {
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, validated.Claims)
 		return
 	}
 	c.Status(http.StatusUnauthorized)
